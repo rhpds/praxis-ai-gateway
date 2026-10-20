@@ -1,0 +1,8 @@
+guid: change-me
+namespace: user-change-me-praxis
+repo:
+  url: https://github.com/rhpds/praxis-ai-gateway
+  revision: main
+praxis:
+  model: granite-3-2-8b-instruct
+  uiImage: quay.io/redhat-gpte/praxis-ai-gateway-ui@sha256:e67615e04af243e2f06d7450f2a1b776c4ac07ebd75c1250a7b7f1f36d694e53

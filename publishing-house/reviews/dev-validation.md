@@ -15,3 +15,5 @@ Source fixes and this migration draft need author/reviewer acceptance. No workst
 Scoped teardown PASS: only the role-owned two Secrets and ConfigMap were removed; the tenant namespace and unrelated sentinel were preserved. The task then removed its three disposable dev namespaces. This is not proof of real virtual-key revocation.
 
 Scoped teardown PASS: the role removed only its two Secrets and ConfigMap, preserving the namespace and unrelated sentinel. All three task-created dev namespaces were then removed. This does not establish real virtual-key revocation.
+
+Migrated Showroom site builds successfully with Antora 3.1.14. Identity/module duration checks, YAML parsing and whitespace checks pass. Matching PH workflow notes and writable Jira records retain the remaining gates.

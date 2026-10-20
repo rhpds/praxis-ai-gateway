@@ -1,0 +1,12 @@
+* xref:index.adoc[Welcome]
+* Guided customer path
+** xref:01-accessing-cluster.adoc[Orient to the experience]
+** xref:02-deploy-gateway.adoc[Show governed model access]
+** xref:03-prove-portability.adoc[Prove the application boundary]
+* Optional operations depth
+** xref:04-observe-routing.adoc[Correlate request evidence]
+** xref:05-handle-failure.adoc[Discuss failure and recovery]
+* Optional governance depth
+** xref:06-isolate-data.adoc[Assess isolation and data controls]
+** xref:07-assess-evidence.adoc[Map the customer architecture]
+* xref:08-conclusion.adoc[Conclusion]

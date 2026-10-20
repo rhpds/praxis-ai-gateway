@@ -1,0 +1,19 @@
+site:
+  title: Govern AI Model Access with Praxis
+  url: https://github.com/jkershawrh/showroom-praxis-ai-gateway
+  start_page: modules::index.adoc
+content:
+  sources:
+    - url: .
+      branches: HEAD
+      start_path: content
+ui:
+  bundle:
+    url: https://github.com/rhpds/rhdp_showroom_theme/releases/download/v2.0.3/ui-bundle.zip
+    snapshot: true
+asciidoc:
+  attributes:
+    experimental: true
+    page-pagination: true
+output:
+  dir: ./www

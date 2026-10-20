@@ -1,0 +1,130 @@
+"""Static preflight for the generated Praxis Showroom lab."""
+
+import re
+from pathlib import Path
+
+import yaml
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PAGES = ROOT / "content/modules/ROOT/pages"
+MODULES = sorted(PAGES.glob("0[2-7]-*.adoc"))
+
+
+def require(condition, message):
+    if not condition:
+        raise AssertionError(message)
+
+
+require((ROOT / "default-site.yml").is_file(), "default-site.yml is missing")
+require((ROOT / "ui-config.yml").is_file(), "ui-config.yml is missing")
+require((ROOT / "content/antora.yml").is_file(), "antora.yml is missing")
+require((ROOT / "content/supplemental-ui").is_dir(), "supplemental UI is missing")
+require((ROOT / "terminal/Containerfile").is_file(), "Praxis learner terminal image definition is missing")
+require((ROOT / "docs/sa-presenter-guide.md").is_file(), "SA presenter guide is missing")
+require(len(MODULES) >= 5, "at least five hands-on modules are required")
+for required in [
+    "publishing-house/spec.yaml",
+    "publishing-house/spec/automation-manifest.yaml",
+    "automation/ansible/galaxy.yml",
+    "automation/ansible/roles/configure_praxis/tasks/main.yml",
+    "automation/gitops/praxis/Chart.yaml",
+    "automation/gitops/bootstrap-infra/Chart.yaml",
+    "qa-automation/healthcheck.yml",
+    "qa-automation/e2e.yml",
+]:
+    require((ROOT / required).is_file(), f"Publishing House artifact is missing: {required}")
+
+nav = (ROOT / "content/modules/ROOT/nav.adoc").read_text()
+for target in re.findall(r"xref:([^\[]+)", nav):
+    require((PAGES / target).is_file(), f"nav target does not exist: {target}")
+
+for module in MODULES:
+    text = module.read_text()
+    require(len(text.splitlines()) >= 50, f"module is too short: {module.name}")
+    for heading in ["== Customer outcome", "== Know:", "== Show:", "== Customer discussion", "== Evidence", "== Key takeaway"]:
+        require(heading in text, f"{module.name} lacks {heading}")
+    for marker in re.findall(r"\[source,bash[^\]]*\]", text):
+        require('role="execute"' in marker, f"non-executable command block in {module.name}")
+        require('subs="attributes+"' in marker, f"attributes disabled in {module.name}")
+
+all_content = "\n".join(path.read_text() for path in PAGES.glob("*.adoc"))
+require("github.com/jkershawrh/praxis-lab" not in all_content, "participant content must not depend on the private engineering repository")
+require("git clone" not in all_content, "participant content must not require a source clone")
+portability = (PAGES / "03-prove-portability.adoc").read_text()
+require("$PRAXIS_BASE_URL/v1/chat/completions" in portability, "stable Praxis API demonstration is missing")
+require("model-backend-credentials" in portability, "platform credential boundary is missing")
+assessment = (PAGES / "07-assess-evidence.adoc").read_text()
+require("contract-ready" in assessment and "does not yet emit native live PPE" in assessment, "preview evidence boundary is missing")
+conclusion = (PAGES / "08-conclusion.adoc").read_text()
+require("oc delete project" not in conclusion, "RHDP must own assigned-project cleanup")
+gateway = (PAGES / "02-deploy-gateway.adoc").read_text()
+require("App UI" in gateway, "customer path must lead with the application experience")
+require("model-backend-credentials" in gateway, "credential-reference proof is missing")
+failure = (PAGES / "05-handle-failure.adoc").read_text()
+require("mock-backend" not in failure, "RHPDS failure exercise must not depend on the removed mock backend")
+require("praxis-ai-allow-required-traffic" in failure, "failure exercise must alter and restore the real gateway egress path")
+
+ui = yaml.safe_load((ROOT / "ui-config.yml").read_text())
+require({tab["name"] for tab in ui["tabs"]} == {"Terminal", "App UI", "OCP Console"}, "UI tabs are incomplete")
+antora_component = yaml.safe_load((ROOT / "content/antora.yml").read_text())
+require(antora_component["name"] == "modules" and antora_component["version"] is None, "Antora component must match Nookbag's default unversioned modules content path")
+for playbook_name in ("site.yml", "default-site.yml"):
+    playbook = yaml.safe_load((ROOT / playbook_name).read_text())
+    require(playbook["ui"]["bundle"]["url"].endswith("/rhdp_showroom_theme/releases/download/v2.0.3/ui-bundle.zip"), f"{playbook_name} must use the standard RHDP Showroom theme")
+    require("supplemental_files" not in playbook["ui"], f"{playbook_name} must not override the standard RHDP header")
+
+catalog_text = (ROOT / "catalog/common.yaml").read_text()
+catalog = yaml.safe_load(catalog_text)
+require(catalog["__meta__"]["catalog"]["category"] in {"Workshops", "Demos", "Labs", "Sandboxes", "Brand_Events"}, "invalid category")
+require(catalog["__meta__"]["catalog"]["reportingLabels"]["primaryBU"] == "Hybrid_Platforms", "invalid business unit")
+require("components" not in catalog["__meta__"], "tenant integration CI must not provision a cluster component")
+require(catalog["__meta__"]["catalog"]["workshop_user_mode"] == "none", "single-tenant lab must assign provision data directly to the workshop seat")
+require(catalog["__meta__"]["sandbox_api"]["actions"]["destroy"]["catch_all"] is False, "destroy must run tenant cleanup workloads")
+dev = yaml.safe_load((ROOT / "catalog/dev.yaml").read_text())
+selector = dev["__meta__"]["sandboxes"][0]["cloud_selector"]
+require(selector == {"purpose": "dev", "cloud": "cnv-dedicated-shared", "lab": "ai-qs-praxis"}, "dev CI must select the paired Praxis integration cluster")
+require(dev["__meta__"]["sandboxes"][0]["tenant_cluster"]["item"] == "ai-quickstarts/ai-qs-praxis-cluster", "dev CI must reference the paired Praxis cluster CI")
+workloads = catalog["workloads"]
+require(all(isinstance(item, str) and item.count(".") == 2 for item in workloads), "workloads must use fully qualified collection names")
+virtual_key_workload = "rhpds.litellm_virtual_keys.ocp4_workload_litellm_virtual_keys"
+require("#include /includes/secrets/litemaas-master_api.yaml" in catalog_text, "LiteMaaS master API include is required")
+require("https://github.com/rhpds/rhpds.litellm_virtual_keys.git" in catalog_text, "LiteMaaS virtual-key collection is required")
+require(workloads.index("agnosticd.namespaced_workloads.ocp4_workload_tenant_keycloak_user") < workloads.index("agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace") < workloads.index(virtual_key_workload) < workloads.index("praxis_ai_gateway.automation.configure_praxis") < workloads.index("agnosticd.core_workloads.ocp4_workload_gitops_bootstrap") < workloads.index("agnosticd.showroom.ocp4_workload_showroom"), "invalid tenant workload order")
+require(virtual_key_workload in catalog["remove_workloads"], "LiteMaaS virtual key cleanup is required")
+require(catalog["ocp4_workload_litellm_virtual_keys_models"] == ["{{ praxis_model_name }}"], "Praxis and LiteMaaS must select the same model variable")
+require(catalog["praxis_model_base_url"] == "{{ litellm_api_endpoint }}/v1", "Praxis must consume the generated LiteMaaS endpoint")
+require(catalog["praxis_model_api_key"] == "{{ litellm_virtual_key }}", "Praxis must consume the generated virtual key")
+showroom_ui = yaml.safe_load(catalog["ocp4_workload_showroom_content_ui_config"])
+require(all(tab.get("url") or tab.get("port") for tab in showroom_ui["tabs"]), "every deployed Showroom tab must define a URL or port")
+require(catalog["ocp4_workload_showroom_terminal_type"] == "showroom", "Showroom must deploy the terminal referenced by the UI config")
+access = (PAGES / "01-accessing-cluster.adoc").read_text()
+require("App UI" in access, "customer orientation must start with the application")
+require("oc project -q" in access, "participant namespace proof is missing")
+require(not catalog["ocp4_workload_litellm_virtual_keys_enable_user_info_data"], "LiteMaaS credentials must not enter user data")
+
+for qa_file in ("qa-automation/healthcheck.yml", "qa-automation/e2e.yml"):
+    qa_text = (ROOT / qa_file).read_text()
+    require('praxis_lab_namespace: "user-{{ guid }}-praxis"' in qa_text, f"{qa_file} must use the catalog namespace contract")
+
+user_data = catalog.get("ocp4_workload_showroom_user_data", {})
+require(not any("maas" in key.lower() or "litellm" in key.lower() or "key" in key.lower() for key in user_data), "Showroom user data must not receive MaaS credentials")
+
+ansible_tasks = (ROOT / "automation/ansible/roles/configure_praxis/tasks/main.yml").read_text()
+require(ansible_tasks.count("no_log: true") >= 3, "credential-bearing Ansible tasks must use no_log")
+
+runtime_values = yaml.safe_load((ROOT / "automation/gitops/praxis/values.yaml").read_text())
+bootstrap_values = yaml.safe_load((ROOT / "automation/gitops/bootstrap-infra/values.yaml").read_text())
+images = list(runtime_values["images"].values()) + [bootstrap_values["praxis"]["uiImage"]]
+require(all("@sha256:" in image for image in images), "all runtime images must be digest pinned")
+bootstrap_template = (ROOT / "automation/gitops/bootstrap-infra/templates/application.yaml").read_text()
+require('namespace: {{ .Values.namespace | quote }}' in bootstrap_template, "GitOps destination must use the tenant namespace value")
+require(catalog["ocp4_workload_gitops_bootstrap_helm_values"]["namespace"] == "{{ praxis_lab_namespace }}", "catalog must pass the tenant namespace to GitOps")
+
+spec = yaml.safe_load((ROOT / "publishing-house/spec.yaml").read_text())
+require(spec["project"]["deployment_mode"] == "rhdp_published", "invalid Publishing House deployment mode")
+require(spec["spec"]["environment"]["topology"] == "shared-tenant", "Publishing House topology must be shared-tenant")
+require(spec["spec"]["environment"]["gpu_nodes"] == 0, "the Praxis lab must not allocate a local GPU")
+require(spec["spec"]["environment"]["ai_requirement"] == "maas", "MaaS must remain the replaceable model access mechanism")
+
+print(f"LAB PREFLIGHT: GREEN ({len(MODULES)} hands-on modules)")

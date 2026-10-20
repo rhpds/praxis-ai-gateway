@@ -1,0 +1,61 @@
+= Orient to the customer experience
+
+The environment is already provisioned so the customer conversation can begin
+with the application outcome. Showroom provides Instructions, an OAuth-protected
+App UI, a namespace-scoped Terminal, and the OpenShift Console.
+
+== Start with the application
+
+Open the *App UI* tab. Confirm that the page shows the request path from the
+application through Praxis to a configured model backend.
+
+Do not submit customer data. Use a neutral prompt such as:
+
+[source,text]
+----
+Explain in two sentences why an application team might use an AI gateway.
+----
+
+Submit the request and retain the displayed status, model, elapsed time, and
+trace ID. These values anchor the rest of the guided discussion.
+
+== Confirm the participant boundary
+
+Open the *Terminal* tab. It is already authenticated to the assigned OpenShift
+project; no source repository or credential setup is required.
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc whoami
+oc project -q
+----
+
+The project must be `{project_name}`. Stop and contact the facilitator if it is
+not. The participant should work only in this namespace.
+
+Confirm that namespaced application inspection is allowed while cluster-wide
+node inspection is not part of the participant role.
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc auth can-i get deployments.apps -n {project_name}
+oc auth can-i get nodes
+----
+
+The first answer should be `yes`. The second should normally be `no` for a
+tenant participant.
+
+== Customer discovery
+
+Before continuing, identify the customer concern that should guide optional
+depth:
+
+* application teams are coupled to individual providers;
+* credentials and endpoints are distributed across repositories;
+* platform teams cannot explain or correlate model access;
+* security teams need identity, data-handling, or evidence controls; or
+* operations teams need predictable failure and recovery behavior.
+
+The guided path addresses the first two concerns. Operations and governance
+modules address the remaining concerns without claiming that every preview
+capability is implemented in the pinned gateway.

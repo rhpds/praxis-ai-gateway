@@ -1,0 +1,91 @@
+= Show governed model access
+
+The first customer question is simple: can an application use a model without
+owning the provider endpoint and credential? This module demonstrates the
+answer through the provisioned application before exposing implementation
+details.
+
+== Customer outcome
+
+* Observe one request crossing the gateway boundary
+* Identify the responsibilities of the application, Praxis, and OpenShift
+* Prove that the upstream model credential remains platform managed
+
+== Know: Why the boundary matters
+
+Without a gateway, each application team commonly chooses a model endpoint,
+stores a credential, and writes provider-specific integration code. Changing a
+provider or credential then requires coordinated application changes.
+
+Praxis provides an OpenAI-compatible application boundary. The application
+sends a request to Praxis; Praxis selects the configured backend and injects
+the upstream authorization value. OpenShift supplies the workload, Secret,
+network, identity, and lifecycle boundaries around that request path.
+
+Praxis is upstream software running on Red Hat OpenShift. It is not represented
+as a supported Red Hat product. RHDP MaaS supplies replaceable model access for
+this exercise and is not a Praxis dependency.
+
+== Show: One governed request
+
+Open the *App UI* tab and submit this neutral prompt:
+
+[source,text]
+----
+List three responsibilities that belong to an enterprise AI platform team.
+----
+
+Use the visible topology to narrate the path:
+
+. The application knows the Praxis endpoint.
+. Praxis owns backend selection and upstream authorization.
+. The configured backend produces the model response.
+. OpenShift protects and operates the workloads.
+
+Point out the returned model, HTTP status, elapsed time, and exact trace ID.
+The model response is useful, but the stable boundary is the primary proof.
+
+== Show: Prove the credential boundary
+
+Open the *Terminal* tab and inspect only the Deployment reference. Do not read
+or print the Secret value.
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} get deployment praxis-ai \
+  -o jsonpath='{.spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.name}{"\n"}'
+----
+
+The expected result is `model-backend-credentials`. The Deployment contains a
+reference rather than a literal API key.
+
+Confirm that Praxis itself has no public Route:
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} get route
+----
+
+Only the OAuth-protected learner UI should be exposed. Direct gateway access is
+available to an authorized namespace user through OpenShift port-forwarding.
+
+== Customer discussion
+
+Ask where the customer currently stores model endpoints and credentials. Then
+identify which application releases would be required to rotate a key or move
+to another compatible model endpoint today.
+
+The exercise does not claim that a gateway alone supplies application
+authorization, data classification, or regulatory compliance. Those require
+explicit identity and policy designs.
+
+== Evidence
+
+The customer has seen a live model result, the gateway topology, a
+Secret-backed credential reference, and the absence of a direct public gateway
+Route.
+
+== Key takeaway
+
+Applications use one stable contract while platform owners retain control of
+backend configuration and credentials on OpenShift.

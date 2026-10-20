@@ -1,0 +1,95 @@
+= Prove the application boundary
+
+A gateway is valuable only when the application contract remains independent
+of the selected model service. This module proves the runtime interface without
+requiring participants to clone a private engineering repository.
+
+== Customer outcome
+
+* Invoke the same application-facing contract outside the learner UI
+* Show that clients need a Praxis address, not the upstream credential
+* Identify the OpenShift AI substitution point
+
+== Know: Stable northbound, replaceable southbound
+
+Applications send an OpenAI-compatible request to Praxis. The platform maps a
+logical model to a configured backend. The application does not receive the
+backend URL or backend credential.
+
+The RHDP environment uses MaaS because shared demonstrations need practical
+model access. A production design can replace it with Red Hat OpenShift AI or
+another compatible service through gateway-side configuration. That
+substitution should not require application source changes.
+
+Python, Java, TypeScript, and other HTTP clients can use the same contract.
+This customer path demonstrates the protocol once rather than spending the
+session installing three language toolchains.
+
+== Show: Connect through OpenShift authorization
+
+Use the Terminal to establish namespace-authorized local access to Praxis.
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} port-forward service/praxis-ai 8080:8080 \
+  >/tmp/praxis-port-forward.log 2>&1 &
+export PRAXIS_BASE_URL=http://127.0.0.1:8080
+----
+
+The command does not copy or expose the upstream model credential.
+
+== Show: Invoke the stable contract
+
+Send a request through Praxis. The model name is supplied by the environment,
+while the request destination remains the Praxis service.
+
+[source,bash,role="execute",subs="attributes+"]
+----
+curl -fsS "$PRAXIS_BASE_URL/v1/chat/completions" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "{maas_model}",
+    "messages": [
+      {"role": "user", "content": "Explain the value of a stable AI gateway contract in one sentence."}
+    ],
+    "temperature": 0,
+    "max_tokens": 100
+  }' | python3 -m json.tool
+----
+
+The response should contain an assistant message and identify the configured
+logical model. The request contains no provider key and no MaaS endpoint.
+
+== Show: Inspect the replaceable backend boundary
+
+Inspect the names—not the values—of the resources owned by the platform.
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} get configmap praxis-ai-config
+oc -n {project_name} get secret model-backend-credentials
+----
+
+The ConfigMap contains non-secret gateway configuration. The Secret owns the
+upstream credential. Applications receive neither resource.
+
+== Customer discussion
+
+Ask which model services the customer uses today and whether application teams
+refer to provider-specific model names. Discuss whether the target design needs
+one shared logical name, tenant-specific aliases, or explicit approved-model
+selection.
+
+Do not promise transparent compatibility for every provider extension. Each
+protocol and model behavior must be qualified against the pinned Praxis build.
+
+== Evidence
+
+The same provisioned gateway served the browser UI and a direct HTTP client.
+The direct client required only a Praxis address, request body, and logical
+model—not the upstream endpoint or credential.
+
+== Key takeaway
+
+Portability comes from a stable application contract and controlled
+gateway-side substitution, not from presenting MaaS as the target architecture.

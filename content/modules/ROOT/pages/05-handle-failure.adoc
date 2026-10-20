@@ -1,0 +1,99 @@
+= Discuss failure and recovery
+
+Centralizing model access also centralizes a failure boundary. This optional
+module helps operations stakeholders distinguish gateway health, backend
+reachability, and request success before deciding whether to run a controlled
+fault exercise.
+
+== Customer outcome
+
+* Distinguish gateway readiness from backend request success
+* Identify which team owns each failure signal
+* Observe declarative recovery without changing the application contract
+
+== Know: Three different signals
+
+OpenShift readiness answers whether the Praxis listener can accept traffic. It
+does not guarantee that a remote model will answer every request. A model
+request may also fail while both the gateway process and network path remain
+healthy.
+
+Treat these as separate signals:
+
+. *Gateway availability:* the Praxis workload is ready.
+. *Backend reachability:* the configured network path can be established.
+. *Request outcome:* the model operation returns an acceptable response.
+
+Restarting a healthy gateway during a backend incident can hide the actual
+cause. Retrying a generative request can also increase cost or repeat side
+effects, so retry policy requires an application-level decision.
+
+== Show: Establish the green baseline
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} wait --for=condition=Available \
+  deployment/praxis-ai deployment/praxis-ui --timeout=180s
+oc -n {project_name} get deployment praxis-ai praxis-ui
+----
+
+Submit a neutral request in the *App UI* and confirm a successful status before
+introducing any fault.
+
+== Show: Optional controlled failure
+
+Run this step only when the facilitator has confirmed that the assigned
+namespace is isolated and sufficient recovery time remains.
+
+Preserve the current egress policy:
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} get networkpolicy praxis-ai-allow-required-traffic \
+  -o yaml > /tmp/praxis-egress-before.yaml
+----
+
+Temporarily remove the allowed egress path. The Praxis process remains ready,
+but the backend request should fail.
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} patch networkpolicy praxis-ai-allow-required-traffic \
+  --type=merge -p '{"spec":{"egress":[]}}'
+oc -n {project_name} get deployment praxis-ai \
+  -o jsonpath='{.status.availableReplicas}{" gateway replica remains available\n"}'
+----
+
+Submit the same App UI request. Retain the non-success status and its trace ID.
+Do not repeatedly retry.
+
+== Show: Restore the reviewed state
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} replace -f /tmp/praxis-egress-before.yaml
+oc -n {project_name} get networkpolicy praxis-ai-allow-required-traffic
+----
+
+Wait for reconciliation if necessary, then repeat the request once and confirm
+that it returns to the green baseline.
+
+== Customer discussion
+
+Ask who currently owns model-provider incidents, retry rules, and user-facing
+errors. Discuss whether the target platform needs circuit breaking, fallback
+models, bounded retries, queues, or fail-closed behavior.
+
+Do not imply that those controls exist merely because Praxis centralizes the
+network path. Each behavior requires configuration and qualification.
+
+== Evidence
+
+The gateway remained available while the backend path failed, the request
+reported a non-success outcome, and restoring declarative network policy
+recovered the same application contract.
+
+== Key takeaway
+
+A governed AI platform needs explicit ownership for gateway health, backend
+reachability, request outcomes, retries, and recovery.

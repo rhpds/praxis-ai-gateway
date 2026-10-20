@@ -1,0 +1,59 @@
+= Conclusion
+
+You explored a governed AI model-access boundary from the customer application
+through Praxis to a replaceable backend on Red Hat OpenShift.
+
+== What was demonstrated
+
+* A live application request crossed the Praxis gateway boundary.
+* The application used a stable contract without the upstream model credential.
+* OpenShift stored the credential as a Secret reference.
+* Praxis remained internal while the learner UI used OpenShift OAuth.
+* Request evidence stayed correlated to the exact request identifier.
+* Optional modules separated gateway health, backend reachability, and request outcomes.
+* Governance discussion distinguished implemented controls from preview capabilities.
+
+== What was not claimed
+
+The session did not establish regulatory compliance, production readiness,
+full distributed tracing, universal provider compatibility, or native live PPE
+audit emission. Those outcomes require customer-specific design and validation.
+
+== Customer next step
+
+Select one bounded proof from the architecture mapping exercise. A strong next
+step uses a representative application, an approved model endpoint, explicit
+identity and data assumptions, and evidence agreed before implementation.
+
+If the customer wants implementation depth, continue with the private
+engineering quickstart in a separate technical working session. It is not
+required for this participant experience.
+
+== Environment ownership
+
+RHDP owns project and credential cleanup when the service is deleted. Do not
+manually delete the assigned project unless the facilitator directs you to do
+so.
+
+Stop any local port-forward created during the session:
+
+[source,bash,role="execute",subs="attributes+"]
+----
+pkill -f 'port-forward service/praxis-ai' || true
+----
+
+== Further reading
+
+* Explore the https://github.com/praxis-proxy/ai[Praxis upstream project].
+* Review https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/[Red Hat OpenShift AI documentation].
+* Use the optional operations and governance modules to prepare a deeper architecture session.
+
+== Final perspective
+
+An AI gateway concentrates change. Applications retain a stable contract while
+platform teams evolve model endpoints, credentials, operations, and policy
+boundaries. OpenShift supplies the enterprise platform controls around that
+gateway; customer requirements determine which additional capabilities must be
+proven next.
+
+Powered by Red Hat OpenShift running on {intel_platform} processors.

@@ -1,0 +1,84 @@
+= Assess isolation and data controls
+
+This optional governance module helps security and architecture stakeholders
+locate the controls that surround an AI gateway. It assesses the provisioned
+OpenShift boundary and identifies policy decisions that remain customer
+specific.
+
+== Customer outcome
+
+* Identify identity, namespace, network, Secret, and data-policy boundaries
+* Distinguish network isolation from application authorization
+* Decide where sensitive-content controls must execute
+
+== Know: Defense in depth
+
+The namespace is the first tenant boundary in this environment. OpenShift
+role-based access control governs who can inspect and change resources.
+NetworkPolicy restricts communication paths, while Secrets separate
+credentials from non-secret configuration.
+
+Those controls do not authenticate an arbitrary business caller. A
+NetworkPolicy governs packets, not business identity. A production public API
+requires a designed and tested OAuth or OpenID Connect boundary and explicit
+authorization rules.
+
+Sensitive-data controls must run before content leaves the controlled
+environment. Depending on the organization, that may mean rejecting,
+redacting, tokenizing, or routing a request to an approved local model.
+
+Evidence has its own sensitivity. Trace identifiers, model names, timestamps,
+and decisions are usually safer than retaining complete prompts and responses.
+
+== Show: Inspect namespace authorization
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} auth can-i get secrets
+oc -n {project_name} auth can-i create pods/portforward
+oc -n {project_name} auth can-i create clusterroles
+----
+
+Interpret the answers rather than assuming that all participants or production
+applications should have the same permissions.
+
+== Show: Inspect network and credential boundaries
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} get networkpolicy
+oc -n {project_name} describe networkpolicy praxis-lab-default-deny
+oc -n {project_name} get deployment praxis-ai \
+  -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}{" -> "}{.valueFrom.secretKeyRef.name}{"\n"}\{end}'
+----
+
+The output may show Secret references, but it must not print Secret values.
+Confirm that the default-deny policy selects the gateway workload and that
+specific policies add only required paths.
+
+== Customer discussion
+
+Use these prompts to select a target design:
+
+* Which identities—people, applications, agents, or tenants—must be attributed?
+* Which models are approved for each identity and data class?
+* Must sensitive content be rejected, transformed, or routed locally?
+* Which metadata may be retained, where, and for how long?
+* What happens when policy or evidence services are unavailable?
+* Which teams approve policy changes and investigate exceptions?
+
+The answers determine whether namespace separation is sufficient or whether
+the target architecture requires additional gateway authorization, policy
+engines, workload identity, or dedicated environments.
+
+== Evidence
+
+The customer has inspected real RBAC answers, NetworkPolicies, and Secret
+references. The session has also separated implemented OpenShift controls from
+application authorization and future policy capabilities.
+
+== Key takeaway
+
+Tenant governance combines identity, authorization, network paths, credential
+ownership, and data policy. No single gateway setting replaces those layers,
+and completing this exercise does not establish regulatory compliance.

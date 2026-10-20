@@ -1,0 +1,82 @@
+= Correlate evidence for one request
+
+This optional operations module addresses a common customer concern: how can a
+platform team explain the result of one known request without accidentally
+showing evidence from another user?
+
+== Customer outcome
+
+* Recognize a W3C trace identifier
+* Correlate the learner-visible response with the exact submitted request
+* Distinguish request correlation from full distributed tracing
+
+== Know: Evidence must belong to the request
+
+The learner UI creates a new W3C `traceparent` for every submission. It sends
+that context through Praxis and displays the trace ID with the returned model,
+HTTP status, and elapsed time.
+
+This is safer than querying for a generic latest trace. In a shared platform,
+the latest event may belong to another request or tenant. The identifier
+created for the request being discussed must remain the correlation key.
+
+The current lab proves request correlation only. It does not connect an
+OpenTelemetry collector and trace backend, so the generated ID is not evidence
+that every network hop produced a span.
+
+== Show: Generate two distinct requests
+
+Open the *App UI* and submit this prompt:
+
+[source,text]
+----
+Summarize the difference between authentication and authorization.
+----
+
+Record the displayed trace ID, model, status, and elapsed time. Submit the same
+prompt again and confirm that the second request has a different trace ID.
+
+The response text may vary. The evidence contract—unique trace ID and
+request-specific metadata—must remain stable.
+
+== Show: Confirm the operational topology
+
+Use the Terminal to inspect the gateway and UI workloads associated with the
+visible request path.
+
+[source,bash,role="execute",subs="attributes+"]
+----
+oc -n {project_name} get deployment praxis-ai praxis-ui
+oc -n {project_name} get service praxis-ai praxis-ui
+oc -n {project_name} get route praxis-ui
+----
+
+Both deployments should be available. The UI has an authenticated Route;
+Praxis remains internal to the namespace.
+
+== Customer discussion
+
+Ask which observability platform the customer uses and what evidence they need
+for model access. Separate these possible requirements:
+
+* request correlation;
+* gateway metrics and structured logs;
+* distributed traces across application, gateway, and backend;
+* prompt or response retention;
+* policy-decision evidence; and
+* usage or cost attribution.
+
+These requirements have different privacy and retention implications. A trace
+identifier is generally safer than copying model content into every telemetry
+system.
+
+== Evidence
+
+Two visible requests produced two distinct trace IDs and retained their own
+model, status, and timing metadata. No unrelated latest-event lookup was used.
+
+== Key takeaway
+
+The current lab demonstrates exact-request correlation. Full routing evidence
+and hop-by-hop tracing remain future capabilities until a telemetry backend is
+deployed and tested.

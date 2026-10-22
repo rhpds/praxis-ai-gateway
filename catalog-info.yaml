@@ -3,13 +3,13 @@ kind: Component
 metadata:
   name: praxis-ai-gateway
   title: praxis-ai-gateway
-  description: "Migrate the existing Govern AI Model Access with Praxis lab into
-    the RHDP Publishing House lifecycle. The 20–30 minute guided customer path
-    has optional operations and governance depth up to 90 minutes. Learners use
-    an OAuth-protected UI and a platform-managed model connection; backend
-    credentials stay outside Showroom. Praxis is an upstream project. Preserve
-    the existing source and AgnosticV review history while PH owns generated
-    catalog configuration and onboarding. Tracking: GPTEINFRA-18273."
+  description: 'Migrate the existing Govern AI Model Access with Praxis lab into the
+    RHDP Publishing House lifecycle. The 20–30 minute guided customer path has optional
+    operations and governance depth up to 90 minutes. Learners use an OAuth-protected
+    UI and a platform-managed model connection; backend credentials stay outside Showroom.
+    Praxis is an upstream project. Preserve the existing source and AgnosticV review
+    history while PH owns generated catalog configuration and onboarding. Tracking:
+    GPTEINFRA-18273.'
   annotations:
     ph.rhdp.io/content-type: lab
     ph.rhdp.io/deployment-mode: rhdp_published
@@ -18,22 +18,28 @@ metadata:
     ph.rhdp.io/migrated-repo: https://github.com/jkershawrh/showroom-praxis-ai-gateway
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: rhpds/praxis-ai-gateway
-    ph.rhdp.io/created-at: 2026-10-20T13:26:58.529Z
+    ph.rhdp.io/created-at: 2026-10-20 13:26:58.529000+00:00
   tags:
-    - publishing-house
-    - lab
-    - rhdp-published
-    - migration
+  - publishing-house
+  - lab
+  - rhdp-published
+  - migration
   links:
-    - url: https://github.com/rhpds/praxis-ai-gateway
-      title: Repository
-      icon: github
-    - url: https://devspaces.apps.ocpv-infra02.wdc07.infra.demo.redhat.com#https://github.com/rhpds/praxis-ai-gateway
-      title: Open in DevSpaces
-      icon: catalog
-    - url: https://central-api-publishing-house.apps.ocpv-infra02.wdc07.infra.demo.redhat.com
-      title: Central
-      icon: dashboard
+  - url: https://github.com/rhpds/praxis-ai-gateway
+    title: Repository
+    icon: github
+  - url: https://devspaces.apps.ocpv-infra02.wdc07.infra.demo.redhat.com#https://github.com/rhpds/praxis-ai-gateway
+    title: Open in DevSpaces
+    icon: catalog
+  - url: https://central-api-publishing-house.apps.ocpv-infra02.wdc07.infra.demo.redhat.com
+    title: Central
+    icon: dashboard
+  - url: https://redhat.atlassian.net/browse/RHDPCD-2133
+    title: PH Jira epic
+    icon: dashboard
+  - url: https://central-publishing-house-publishing-house.apps.ocpv-infra02.wdc07.infra.demo.redhat.com/publishing-house-workflows/7500271a-18f9-4c7f-adcf-2220e34ab027
+    title: PH workflow
+    icon: dashboard
 spec:
   type: content
   lifecycle: experimental

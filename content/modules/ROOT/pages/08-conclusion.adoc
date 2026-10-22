@@ -39,7 +39,13 @@ Stop any local port-forward created during the session:
 
 [source,bash,role="execute",subs="attributes+"]
 ----
-pkill -f 'port-forward service/praxis-ai' || true
+if [ -n "$PRAXIS_FORWARD_PID" ]; then
+  kill "$PRAXIS_FORWARD_PID" 2>/dev/null || true
+fi
+if [ -n "$PRAXIS_FORWARD_LOG" ]; then
+  rm -f "$PRAXIS_FORWARD_LOG"
+fi
+unset PRAXIS_FORWARD_PID PRAXIS_FORWARD_LOG PRAXIS_BASE_URL
 ----
 
 == Further reading

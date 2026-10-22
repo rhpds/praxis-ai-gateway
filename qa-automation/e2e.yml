@@ -2,9 +2,12 @@
 - name: Validate the learner-facing Praxis path
   hosts: localhost
   gather_facts: false
+  module_defaults:
+    group/kubernetes.core.k8s:
+      kubeconfig: "{{ k8s_kubeconfig | default(omit) }}"
   vars:
     praxis_lab_namespace: "user-{{ guid }}-praxis"
-    praxis_test_model: granite-3-2-8b-instruct
+    praxis_test_model: "{{ praxis_model_name | default('granite-3-2-8b-instruct') }}"
   tasks:
     - name: Read learner UI route
       kubernetes.core.k8s_info:

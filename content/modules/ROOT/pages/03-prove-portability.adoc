@@ -31,12 +31,27 @@ Use the Terminal to establish namespace-authorized local access to Praxis.
 
 [source,bash,role="execute",subs="attributes+"]
 ----
+export PRAXIS_FORWARD_LOG=$(mktemp)
 oc -n {project_name} port-forward service/praxis-ai 8080:8080 \
-  >/tmp/praxis-port-forward.log 2>&1 &
+  >"$PRAXIS_FORWARD_LOG" 2>&1 &
+export PRAXIS_FORWARD_PID=$!
 export PRAXIS_BASE_URL=http://127.0.0.1:8080
+for attempt in $(seq 1 30); do
+  kill -0 "$PRAXIS_FORWARD_PID" 2>/dev/null || break
+  grep -q 'Forwarding from 127.0.0.1:8080' "$PRAXIS_FORWARD_LOG" && break
+  sleep 1
+done
+if ! kill -0 "$PRAXIS_FORWARD_PID" 2>/dev/null || ! grep -q 'Forwarding from 127.0.0.1:8080' "$PRAXIS_FORWARD_LOG"; then
+  echo 'STOP: port-forward is unavailable; inspect the local log and check for an occupied port.'
+  kill "$PRAXIS_FORWARD_PID" 2>/dev/null || true
+  unset PRAXIS_BASE_URL
+fi
 ----
 
-The command does not copy or expose the upstream model credential.
+Continue only after the forward reports ready; keep this Terminal open. If port
+8080 is occupied, stop your previous lab forward before retrying. The command
+does not copy or expose the upstream model credential. Kubernetes authorizes
+the tunnel; this path does not prove browser OAuth authentication.
 
 == Show: Invoke the stable contract
 

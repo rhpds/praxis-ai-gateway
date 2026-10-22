@@ -9,3 +9,7 @@ Health checks deployment availability, Route TLS and provisioned objects. The ga
 The internal gateway check does not establish the authenticated browser path. Before promotion, record a fresh dev order and manually verify learner sign-in, UI completion and routing evidence, denied unauthorized access, failure behavior, a second tenant's isolation, cleanup and virtual-key revocation. Record source/catalog commits and image digests, not credentials or temporary access URLs. A 20–30 minute core walkthrough and optional modules up to 90 minutes must also be timed.
 
 Keep health/E2E status in progress until the live evidence is accepted. The RHDP-owned migration repository is `rhpds/praxis-ai-gateway`, tracked by RHDPCD-2133. Publishing House owns generated AgnosticV and onboarding. Reviewer acceptance, full learner authentication/isolation and model capacity remain gates; Dallas is a separate dev environment.
+
+October 22 author-review changes and remaining acceptance gates: [dated receipt](../publishing-house/reviews/learner-validation-2026-10-22.md). The `learner-contracts` CI job runs offline regressions; it is not a fresh catalog-order result.
+
+Run `python runtime-automation/validate_lab.py` for the migrated PH source preflight. Generated catalog configuration remains a PH deliverable and is deliberately not invented in this repository.

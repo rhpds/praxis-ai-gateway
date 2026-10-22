@@ -2,6 +2,9 @@
 - name: Check the provisioned Praxis lab without exposing credentials
   hosts: localhost
   gather_facts: false
+  module_defaults:
+    group/kubernetes.core.k8s:
+      kubeconfig: "{{ k8s_kubeconfig | default(omit) }}"
   vars:
     praxis_lab_namespace: "user-{{ guid }}-praxis"
   tasks:
